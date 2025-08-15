@@ -97,7 +97,13 @@
                             <li class="flex items-center"><svg class="h-5 w-5 text-green-500 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>ເຊີບເວີສະເພາະໃນໄທ</li>
                             <li class="flex items-center"><svg class="h-5 w-5 text-green-500 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>ບໍລິການຊ່ວຍເຫຼືອລູກຄ້າຕະຫຼອດ 24 ຊົ່ວໂມງ</li>
                         </ul>
-                        <a href="https://wa.me/8562076796784" target="_blank" class="w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-full hover:bg-blue-500 transition shadow-lg">ຊື້ດຽວນີ້</a>
+                        <!-- Start of the new form -->
+                        <form id="whatsapp-form" class="w-full">
+                            <input type="tel" id="phone-number" name="phone-number" placeholder="ກະລຸນາໃສ່ເບີໂທລະສັບຂອງທ່ານ" required class="w-full p-3 rounded-lg mb-4 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-full hover:bg-blue-500 transition shadow-lg">ຊື້ດຽວນີ້</button>
+                        </form>
+                        <p id="error-message" class="text-red-400 mt-2 hidden">ກະລຸນາໃສ່ເບີໂທລະສັບທີ່ຖືກຕ້ອງ.</p>
+                        <!-- End of the new form -->
                     </div>
                 </div>
             </div>
@@ -144,8 +150,40 @@
             </div>
         </div>
     </footer>
+    <!-- JavaScript to handle the form submission and WhatsApp link -->
+    <script>
+        document.getElementById('whatsapp-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting normally
+            
+            const phoneNumberInput = document.getElementById('phone-number');
+            const errorMessage = document.getElementById('error-message');
+            const customerNumber = phoneNumberInput.value;
+            
+            // Basic validation to ensure the phone number is not empty
+            if (!customerNumber) {
+                errorMessage.classList.remove('hidden');
+                return;
+            } else {
+                errorMessage.classList.add('hidden');
+            }
+
+            // You must replace this with your actual WhatsApp number
+            const myWhatsappNumber = '8562076796784'; 
+            
+            // Pre-filled message in Lao
+            const message = `ສະບາຍດີ, ຂ້າພະເຈົ້າສົນໃຈຊື້ VPN. ເບີໂທລະສັບຂອງຂ້ອຍແມ່ນ: ${customerNumber}.`;
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Create the WhatsApp URL with the pre-filled message
+            const whatsappUrl = `https://wa.me/${myWhatsappNumber}?text=${encodedMessage}`;
+            
+            // Open the link in a new tab
+            window.open(whatsappUrl, '_blank');
+        });
+    </script>
 
 </body>
 </html>
+
 
 
