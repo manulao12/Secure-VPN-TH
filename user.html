@@ -12,7 +12,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Set Firebase debug logs
@@ -21,7 +21,7 @@
         // Global variables for Firebase services
         let app, db, auth;
         let userId = null;
-        let appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -31,39 +31,44 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-
-            // Authentication logic
-            onAuthStateChanged(auth, async (user) => {
-                const userStatusEl = document.getElementById('user-status');
-                const loadingIndicator = document.getElementById('loading');
-                if (user) {
-                    userId = user.uid;
-                    userStatusEl.textContent = `Signed in. User ID: ${userId}`;
-                    loadingIndicator.classList.add('hidden');
-                    loadItems();
-                } else {
-                    userStatusEl.textContent = 'Signing in...';
-                    if (initialAuthToken) {
-                        try {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } catch (error) {
-                            console.error("Error signing in with custom token:", error);
-                            userStatusEl.textContent = 'Sign-in failed. Please try again.';
-                        }
-                    } else {
-                        try {
-                            await signInAnonymously(auth);
-                        } catch (error) {
-                            console.error("Error signing in anonymously:", error);
-                            userStatusEl.textContent = 'Sign-in failed. Please try again.';
-                        }
-                    }
-                }
-            });
         } else {
             document.getElementById('loading').textContent = "Firebase is not configured. Please ensure __firebase_config is available.";
-            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('main-content').classList.add('hidden');
         }
+
+        // Authentication logic
+        onAuthStateChanged(auth, async (user) => {
+            const loadingIndicator = document.getElementById('loading');
+            const mainContent = document.getElementById('main-content');
+            const userStatusEl = document.getElementById('user-status');
+
+            if (user) {
+                // User is signed in
+                userId = user.uid;
+                userStatusEl.textContent = `Signed in. Your User ID: ${userId}`;
+                mainContent.classList.remove('hidden');
+                loadingIndicator.classList.add('hidden');
+                loadItems();
+            } else {
+                // User is signed out, or not yet authenticated.
+                userStatusEl.textContent = 'Signing in...';
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Error signing in with custom token:", error);
+                        userStatusEl.textContent = 'Sign-in failed. Please try again.';
+                    }
+                } else {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Error signing in anonymously:", error);
+                        userStatusEl.textContent = 'Sign-in failed. Please try again.';
+                    }
+                }
+            }
+        });
 
         // --- Functions to calculate days left and status ---
         const getDaysLeft = (expirationDate) => {
@@ -153,7 +158,6 @@
 
         const addItem = async (name, expirationDate) => {
             if (!db || !userId) {
-                console.error("Firestore not ready.");
                 showStatusMessage("App is not ready. Please wait a moment.", "bg-red-500");
                 return;
             }
@@ -197,18 +201,20 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('add-item-form');
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const name = document.getElementById('item-name').value.trim();
-                const expirationDate = document.getElementById('item-exp-date').value;
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('item-name').value.trim();
+                    const expirationDate = document.getElementById('item-exp-date').value;
 
-                if (!name || !expirationDate) {
-                    showStatusMessage("Please fill out all fields.", "bg-red-500");
-                    return;
-                }
-                addItem(name, expirationDate);
-                form.reset();
-            });
+                    if (!name || !expirationDate) {
+                        showStatusMessage("Please fill out all fields.", "bg-red-500");
+                        return;
+                    }
+                    addItem(name, expirationDate);
+                    form.reset();
+                });
+            }
         });
     </script>
 </head>
@@ -226,7 +232,8 @@
         <div id="loading" class="text-center text-gray-500 mt-8">Loading...</div>
         <p id="user-status" class="text-sm text-gray-500 mt-2 break-all"></p>
 
-        <main class="w-full max-w-2xl mt-8">
+        <!-- Main application content -->
+        <main id="main-content" class="w-full max-w-2xl mt-8">
             <!-- Form to add new items -->
             <div id="form-container" class="bg-white p-6 rounded-xl shadow-lg mb-8">
                 <h2 class="text-2xl font-bold mb-4 text-gray-800">Add New Item</h2>
@@ -251,10 +258,10 @@
                     <!-- Items will be populated here by JavaScript -->
                 </div>
             </div>
-            
-            <!-- Status message container -->
-            <div id="status-message" class="absolute bottom-4 right-4 p-3 rounded-lg shadow-lg text-white font-medium opacity-0 scale-95 transition-all duration-300"></div>
         </main>
+        
+        <!-- Status message container -->
+        <div id="status-message" class="fixed bottom-4 right-4 p-3 rounded-lg shadow-lg text-white font-medium opacity-0 scale-95 transition-all duration-300"></div>
     </div>
 </body>
 </html>
